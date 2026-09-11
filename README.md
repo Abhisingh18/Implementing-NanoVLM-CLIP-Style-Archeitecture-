@@ -1,368 +1,845 @@
-Vision-Language Fusion Ablation Study
+# 🔬 Vision-Language Fusion Ablation Study
 
-A controlled study comparing Early Fusion, Late Fusion, and Cross-Attention Fusion strategies for Vision-Language Models using synthetic image-text data and contrastive learning.
+<p align="center">
 
-🔬 Research Question
+**A Controlled Study of Multimodal Fusion Strategies for Vision-Language Models**
 
-How does the choice of multimodal fusion strategy affect image-text representation alignment and retrieval performance?
+<br>
 
-🎯 Objectives
+[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)]()
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.x-orange.svg)]()
+[![Research](https://img.shields.io/badge/Project-Research-purple.svg)]()
+[![Status](https://img.shields.io/badge/Status-Active-success.svg)]()
 
-Build a controlled Vision-Language learning setup.
+</p>
 
-Compare different multimodal fusion strategies.
+---
 
-Train the models using contrastive learning.
+## 📌 Overview
 
-Evaluate image-text retrieval performance.
+This project investigates how different **multimodal fusion strategies**
+affect image-text representation learning in Vision-Language Models (VLMs).
 
-Analyze cross-modal interactions using attention visualization.
+We implement and compare:
 
-🧠 Methodology
+- 🟦 **Early Fusion**
+- 🟩 **Late Fusion**
+- 🟪 **Cross-Attention Fusion**
 
-The system consists of:
+All approaches are evaluated under a controlled experimental setup using
+the same synthetic image-text dataset and a contrastive learning objective.
 
-Vision Encoder
+The primary goal is to understand **when and how visual and linguistic
+information should interact inside a multimodal architecture.**
 
-Text Encoder
+---
 
-Multimodal Fusion Module
+# 🎯 Research Question
 
-Contrastive Learning Objective
+> **How does the choice of multimodal fusion strategy affect image-text
+> representation alignment and retrieval performance?**
 
-Image ──→ Vision Encoder ──→ Visual Representation ──┐
-                                                     ├──→ Fusion ──→ Joint Representation
-Text  ──→ Text Encoder  ──→ Text Representation ─────┘
+Specifically, we investigate whether:
 
-🗂️ Synthetic Dataset
+```text
+Simple Feature Fusion
+        vs
+Late Representation Fusion
+        vs
+Dynamic Token-Level Interaction
+```
 
-The experiment uses procedurally generated images containing simple:
+leads to different multimodal learning behavior.
 
-Colors
+---
 
-Shapes
+# 🧠 Core Idea
 
-Spatial positions
+The overall system can be represented as:
 
-The corresponding text caption describes the image.
+```text
+                    ┌──────────────────┐
+                    │  Synthetic Data  │
+                    └────────┬─────────┘
+                             │
+                    ┌────────┴────────┐
+                    │                 │
+                  Image             Text
+                    │                 │
+                    ▼                 ▼
+             Vision Encoder     Text Encoder
+                    │                 │
+                    ▼                 ▼
+             Visual Features     Text Features
+                    │                 │
+                    └────────┬────────┘
+                             │
+                      Fusion Strategy
+                             │
+            ┌────────────────┼────────────────┐
+            │                │                │
+            ▼                ▼                ▼
+       Early Fusion      Late Fusion    Cross-Attention
+            │                │                │
+            └────────────────┼────────────────┘
+                             │
+                             ▼
+                  Joint Representation
+                             │
+                             ▼
+                   Contrastive Learning
+                             │
+                             ▼
+                       Evaluation
+```
 
-Example:
+---
 
-Image: red square on the left
-Caption: "a red square is on the left"
+# 🚀 Objectives
 
-The current configuration contains:
+- Build a controlled Vision-Language learning environment.
+- Implement multiple multimodal fusion mechanisms.
+- Train the models using contrastive learning.
+- Compare image-text retrieval performance.
+- Analyze learned multimodal representations.
+- Visualize cross-modal attention.
+- Perform a controlled fusion ablation study.
 
-8 colors
+---
 
-3 shapes
+# 🗂️ Dataset
 
-7 positions
+## Synthetic Vision-Language Dataset
 
-168 unique image-text pairs
+To isolate the effect of the fusion mechanism, the project uses a
+procedurally generated dataset.
 
-🔀 Fusion Strategies
+Each sample contains:
 
-1. Early Fusion
+```text
+Image
+   +
+Text Caption
+```
 
-Image and text representations are combined at an early stage.
+The image consists of a simple colored geometric shape placed at a
+specific spatial position.
 
+### Dataset Attributes
+
+| Attribute | Values |
+|---|---|
+| Colors | 8 |
+| Shapes | 3 |
+| Positions | 7 |
+| Unique Samples | 168 |
+| Image Size | 32 × 32 |
+
+### Example
+
+```text
+Image:
+
+┌────────────────┐
+│                │
+│                │
+│ 🟥             │
+│                │
+│                │
+└────────────────┘
+
+Caption:
+
+"a red square is on the left"
+```
+
+The dataset is generated automatically, ensuring exact alignment between
+the image and its corresponding caption.
+
+---
+
+# 🏗️ Model Architecture
+
+## Overall Architecture
+
+```mermaid
+flowchart LR
+
+    A[Image] --> B[Vision Encoder]
+    C[Text] --> D[Text Encoder]
+
+    B --> E[Visual Features]
+    D --> F[Text Features]
+
+    E --> G[Fusion Module]
+    F --> G
+
+    G --> H[Joint Representation]
+
+    H --> I[Contrastive Learning]
+    I --> J[Retrieval Evaluation]
+```
+
+---
+
+# 🔀 Multimodal Fusion Strategies
+
+## 1️⃣ Early Fusion
+
+In Early Fusion, visual and textual representations are combined at an
+early stage before multimodal processing.
+
+```mermaid
+flowchart LR
+
+    A[Image] --> B[Vision Encoder]
+    C[Text] --> D[Text Encoder]
+
+    B --> E[Visual Features]
+    D --> F[Text Features]
+
+    E --> G[Feature Concatenation]
+    F --> G
+
+    G --> H[Multimodal Network]
+    H --> I[Joint Representation]
+```
+
+### Concept
+
+```text
 Image → Vision Encoder ──┐
-                         ├→ Concatenation → Multimodal Network
-Text  → Text Encoder ────┘
+                         ├──→ Combine → Multimodal Network
+Text  → Text Encoder  ───┘
+```
 
-2. Late Fusion
+### Key Property
 
-The two modalities are encoded independently and combined at a later stage.
+The two modalities interact **early in the network**.
 
+---
+
+# 2️⃣ Late Fusion
+
+In Late Fusion, each modality is independently processed and combined
+only after high-level representations have been obtained.
+
+```mermaid
+flowchart LR
+
+    A[Image] --> B[Vision Encoder]
+    C[Text] --> D[Text Encoder]
+
+    B --> E[Image Embedding]
+    D --> F[Text Embedding]
+
+    E --> G[Fusion Layer]
+    F --> G
+
+    G --> H[Joint Representation]
+```
+
+### Concept
+
+```text
 Image → Vision Encoder → Image Embedding ──┐
-                                           ├→ Fusion → Joint Embedding
+                                           ├──→ Fusion
 Text  → Text Encoder  → Text Embedding ────┘
+```
 
-3. Cross-Attention Fusion
+### Key Property
 
-Text tokens attend dynamically to visual tokens.
+The modalities remain mostly independent until the **later stage**.
 
+---
+
+# 3️⃣ Cross-Attention Fusion
+
+Cross-Attention enables one modality to dynamically attend to another
+modality at the token level.
+
+In this project:
+
+```text
 Text Tokens  → Query (Q)
-Image Tokens → Key (K), Value (V)
+Image Tokens → Key (K)
+Image Tokens → Value (V)
+```
 
-             ↓
+```mermaid
+flowchart LR
 
-      Cross-Attention
+    A[Image] --> B[Vision Encoder]
+    B --> C[Visual Tokens]
 
-             ↓
+    D[Text] --> E[Text Encoder]
+    E --> F[Text Tokens]
 
-   Fused Representation
+    F --> G[Query Q]
+    C --> H[Key K]
+    C --> I[Value V]
 
-The attention operation is:
+    G --> J[Multi-Head Cross Attention]
+    H --> J
+    I --> J
 
-$$
-Attention(Q,K,V)=softmax\left(\frac{QK^T}{\sqrt{d_k}}\right)V
-$$
+    J --> K[Fused Text Representation]
+```
 
-🔗 Contrastive Learning
-
-The objective is to bring matching image-text pairs closer in the embedding space and push mismatched pairs apart.
-
-For a batch of size $N$:
-
-Image₁ ↔ Caption₁  Positive
-Image₁ ↔ Caption₂  Negative
-Image₁ ↔ Caption₃  Negative
-...
-
-The similarity matrix is:
+### Attention Equation
 
 $$
-S = \frac{I T^T}{\tau}
+Attention(Q,K,V)
+=
+softmax
+\left(
+\frac{QK^T}{\sqrt{d_k}}
+\right)V
+$$
+
+### Key Property
+
+Unlike simple concatenation or averaging, cross-attention allows each
+text token to dynamically determine **which visual tokens are relevant**.
+
+---
+
+# 🔗 Contrastive Learning
+
+The models learn a shared embedding space for images and text.
+
+Matching image-text pairs are pulled together while mismatched pairs
+are pushed apart.
+
+```text
+Positive Pair
+
+Image₁  ─────────────── Caption₁
+              ✓
+
+
+Negative Pairs
+
+Image₁  ─────────────── Caption₂
+              ✗
+
+Image₁  ─────────────── Caption₃
+              ✗
+```
+
+---
+
+## Similarity Matrix
+
+Given normalized image embeddings $I$ and text embeddings $T$:
+
+$$
+S = \frac{IT^T}{\tau}
 $$
 
 where:
 
-$I$ = normalized image embeddings
+- $I$ = image embeddings
+- $T$ = text embeddings
+- $\tau$ = temperature parameter
 
-$T$ = normalized text embeddings
+For a batch of $N$ samples:
 
-$\tau$ = temperature
+```text
+             Text
+          T1   T2   T3   T4
 
-The final loss is:
+Image I1   ✓    ✗    ✗    ✗
+      I2   ✗    ✓    ✗    ✗
+      I3   ✗    ✗    ✓    ✗
+      I4   ✗    ✗    ✗    ✓
+```
+
+---
+
+# 📐 Contrastive Loss
+
+The training objective uses symmetric image-to-text and text-to-image
+classification losses.
 
 $$
-L = \frac{L_{image\rightarrow text}+L_{text\rightarrow image}}{2}
+L =
+\frac{
+L_{image\rightarrow text}
++
+L_{text\rightarrow image}
+}{2}
 $$
 
-🏗️ Models
+### Training Flow
 
-Baseline Contrastive VLM
+```text
+Image Batch
+     │
+     ▼
+Vision Encoder
+     │
+     ▼
+Image Embeddings
+     │
+     ├──────────────┐
+     │              │
+     ▼              ▼
+Similarity Matrix ← Text Embeddings
+     ▲              ▲
+     │              │
+Text Batch → Text Encoder
+```
 
-Independent vision and text encoders produce global embeddings, which are trained with symmetric contrastive loss.
+---
 
-Cross-Attention VLM
+# 🧩 Model Variants
 
-The vision encoder produces visual tokens and the text encoder produces text tokens. Multi-head cross-attention allows text tokens to attend to relevant visual tokens before generating the final representation.
+| Model | Vision Encoder | Text Encoder | Fusion | Objective |
+|---|---|---|---|---|
+| Baseline | CNN | Transformer | Independent | Contrastive |
+| Early Fusion | CNN | Transformer | Early | Contrastive |
+| Late Fusion | CNN | Transformer | Late | Contrastive |
+| Cross-Attention | CNN | Transformer | Cross-Attention | Contrastive |
 
-⚙️ Experimental Setup
+---
 
-Parameter
+# ⚙️ Experimental Configuration
 
-Value
+| Parameter | Value |
+|---|---:|
+| Image Size | 32 × 32 |
+| Embedding Dimension | 64 |
+| Attention Heads | 4 |
+| Temperature | 0.07 |
+| Batch Size | 32 |
+| Epochs | 20 |
+| Learning Rate | 3e-4 |
+| Optimizer | AdamW |
+| Weight Decay | 1e-4 |
 
-Image Size
+All fusion strategies should be trained using comparable settings to
+ensure a fair comparison.
 
-32 × 32
+---
 
-Embedding Dimension
+# 📊 Evaluation
 
-64
+The models are evaluated using both quantitative and qualitative analysis.
 
-Attention Heads
+## Quantitative Metrics
 
-4
+### Contrastive Loss
 
-Temperature
+Measures how effectively the model separates positive and negative
+image-text pairs.
 
-0.07
+### Recall@1
 
-Optimizer
+Percentage of queries for which the correct paired item is ranked first.
 
-AdamW
+### Recall@5
 
-Learning Rate
+Percentage of queries for which the correct paired item appears within
+the top five retrieved results.
 
-3e-4
+---
 
-Weight Decay
+# 🔎 Retrieval Evaluation
 
-1e-4
+## Image → Text
 
-Batch Size
+```text
+Query Image
+     │
+     ▼
+Image Encoder
+     │
+     ▼
+Image Embedding
+     │
+     ▼
+Similarity with all Text Embeddings
+     │
+     ▼
+Top-K Captions
+```
 
-32
+## Text → Image
 
-Epochs
+```text
+Query Caption
+     │
+     ▼
+Text Encoder
+     │
+     ▼
+Text Embedding
+     │
+     ▼
+Similarity with all Image Embeddings
+     │
+     ▼
+Top-K Images
+```
 
-20
+---
 
-All fusion strategies should use comparable training conditions for a fair ablation study.
+# 🧪 Ablation Study
 
-📊 Evaluation
+The central experiment compares how information is exchanged between
+the two modalities.
 
-The experiments use:
+| Model | Fusion | Interaction | Expected Behavior |
+|---|---|---|---|
+| Baseline | None | Independent | Global alignment |
+| Early Fusion | Early | Feature-level | Early joint representation |
+| Late Fusion | Late | High-level | Independent encoding |
+| Cross-Attention | Dynamic | Token-level | Fine-grained interaction |
 
-Contrastive Loss
+---
 
-Recall@1
+# 📈 Results
 
-Recall@5
+Results will be added after training and evaluating all models under the
+same protocol.
 
-Image-to-Text Retrieval
+## Main Results
 
-Text-to-Image Retrieval
+| Model | Loss | Image→Text R@1 | Image→Text R@5 | Text→Image R@1 | Text→Image R@5 |
+|---|---:|---:|---:|---:|---:|
+| Baseline | TBD | TBD | TBD | TBD | TBD |
+| Early Fusion | TBD | TBD | TBD | TBD | TBD |
+| Late Fusion | TBD | TBD | TBD | TBD | TBD |
+| Cross-Attention | TBD | TBD | TBD | TBD | TBD |
 
-Similarity Matrix
+---
 
-Cross-Attention Visualization
+# 📉 Training Curves
 
-🧪 Ablation Study
+Training loss comparison:
 
-The main comparison is:
+```text
+results/
+└── loss_curves/
+    └── fusion_loss_comparison.png
+```
 
-Model
+Example visualization:
 
-Fusion Strategy
-
-Cross-Modal Interaction
-
-Baseline
-
-Independent
-
-Low
-
-Early Fusion
-
-Early
-
-Joint representation
-
-Late Fusion
-
-Late
-
-High-level
-
-Cross-Attention
-
-Dynamic
-
-Token-level
-
-Results
-
-Results will be added after all models are trained under the same evaluation protocol.
-
-Model
-
+```text
 Loss
+ │
+ │╲
+ │ ╲       Early
+ │  ╲____
+ │       ╲
+ │        ╲___ Cross-Attention
+ │
+ └──────────────────────── Epoch
+```
 
-Image→Text R@1
+> Replace the placeholder visualization with the actual experimental
+> plot after training.
 
-Image→Text R@5
+---
 
-Text→Image R@1
+# 🧮 Similarity Matrix
 
-Text→Image R@5
+The similarity matrix provides a visualization of image-text alignment.
 
-Baseline
+```text
+             Text
+          T1   T2   T3   T4
 
-TBD
+Image I1  ██   ░    ░    ░
+      I2  ░    ██   ░    ░
+      I3  ░    ░    ██   ░
+      I4  ░    ░    ░    ██
+```
 
-TBD
+A stronger diagonal indicates better alignment between matching
+image-text pairs.
 
-TBD
+---
 
-TBD
+# 👁️ Cross-Attention Visualization
 
-TBD
+Cross-attention weights can be visualized to understand how text tokens
+attend to visual tokens.
 
-Early Fusion
+```text
+              Visual Tokens
+           V1 V2 V3 V4 ... V16
 
-TBD
+Text T1     ░  ░  █  ░  ... ░
+Text T2     ░  █  ░  ░  ... ░
+Text T3     ░  ░  ░  █  ... ░
+Text T4     ░  ░  █  ░  ... ░
+```
 
-TBD
+This provides an interpretable view of **text-to-image interaction**.
 
-TBD
+---
 
-TBD
+# 💡 Research Analysis
 
-TBD
+The main analysis focuses on three questions:
 
-Late Fusion
+### Q1. Does early interaction improve representation learning?
 
-TBD
+Compare Early Fusion against the independent baseline.
 
-TBD
+### Q2. Does late high-level fusion provide sufficient multimodal alignment?
 
-TBD
+Compare Late Fusion against Early Fusion.
 
-TBD
+### Q3. Does token-level cross-attention provide better alignment?
 
-TBD
+Compare Cross-Attention against both feature-level fusion approaches.
 
-Cross-Attention
+---
 
-TBD
+# 🔬 Key Findings
 
-TBD
+> Findings will be populated from the actual experimental results.
 
-TBD
+Potential analysis dimensions:
 
-TBD
+- Representation alignment
+- Retrieval accuracy
+- Training convergence
+- Cross-modal interaction
+- Attention interpretability
+- Computational complexity
 
-TBD
+---
 
-🔎 Qualitative Analysis
+# ⚠️ Limitations
 
-Cross-attention maps are visualized to investigate which visual tokens receive attention from different text tokens.
+This is a controlled proof-of-concept rather than a large-scale VLM benchmark.
 
-This provides an interpretable view of text-to-image interaction.
+Current limitations include:
 
-⚠️ Limitations
+- Small synthetic dataset
+- Simple geometric images
+- Limited vocabulary
+- No pretrained large-scale encoders
+- Limited visual complexity
+- Training-set retrieval can be overly easy
 
-The dataset is synthetic and very small.
+Therefore, results should not be directly interpreted as representative
+of real-world VLM performance.
 
-The task is intentionally controlled.
+---
 
-Results should not be interpreted as representative of large-scale real-world VLMs.
+# 🚀 Future Work
 
-Training and evaluation must be separated for a meaningful generalization study.
+- [ ] Complete Early Fusion implementation
+- [ ] Complete Late Fusion implementation
+- [ ] Train/validation/test split
+- [ ] Compositional generalization experiments
+- [ ] Larger synthetic datasets
+- [ ] Real image-text datasets
+- [ ] Pretrained vision encoder
+- [ ] Pretrained language model
+- [ ] Embedding dimension ablation
+- [ ] Temperature ablation
+- [ ] Attention-head ablation
+- [ ] Computational efficiency analysis
+- [ ] Scaling experiments
+- [ ] Attention interpretability analysis
 
-🚀 Future Work
+---
 
-Implement complete Early Fusion and Late Fusion baselines.
+# 📁 Project Structure
 
-Create train/validation/test splits.
+```text
+vlm-fusion-ablation-study/
+│
+├── README.md
+├── PROJECT_STRUCTURE.md
+├── requirements.txt
+├── LICENSE
+│
+├── notebooks/
+│   └── vlm_fusion_ablation.ipynb
+│
+├── src/
+│   ├── dataset.py
+│   ├── encoders.py
+│   ├── early_fusion.py
+│   ├── late_fusion.py
+│   ├── cross_attention.py
+│   ├── losses.py
+│   └── evaluation.py
+│
+├── experiments/
+│   ├── baseline/
+│   │   ├── train.py
+│   │   └── config.yaml
+│   │
+│   ├── early_fusion/
+│   │   ├── train.py
+│   │   └── config.yaml
+│   │
+│   ├── late_fusion/
+│   │   ├── train.py
+│   │   └── config.yaml
+│   │
+│   └── cross_attention/
+│       ├── train.py
+│       └── config.yaml
+│
+├── results/
+│   ├── loss_curves/
+│   ├── retrieval/
+│   ├── similarity_matrices/
+│   └── attention_maps/
+│
+└── assets/
+    └── architecture.png
+```
 
-Test compositional generalization.
+---
 
-Use larger synthetic datasets.
+# 🛠️ Installation
 
-Introduce real image-text datasets.
+Clone the repository:
 
-Compare different embedding dimensions.
+```bash
+git clone <repository-url>
 
-Study the effect of temperature and attention heads.
+cd vlm-fusion-ablation-study
+```
 
-Add pretrained vision and language encoders.
+Install dependencies:
 
-Extend the experiment toward larger VLM architectures.
+```bash
+pip install -r requirements.txt
+```
 
-📦 Installation
+---
 
-pip install torch torchvision numpy pillow matplotlib
+# ▶️ Usage
 
-▶️ Usage
+Run the main notebook:
 
-The main experiment can be run from:
+```bash
+jupyter notebook
+```
 
+Then open:
+
+```text
 notebooks/vlm_fusion_ablation.ipynb
+```
 
-The notebook contains dataset generation, model definitions, training, retrieval evaluation, and visualization.
+The notebook contains:
 
-📚 References
+```text
+Dataset Generation
+       ↓
+Tokenization
+       ↓
+Vision Encoder
+       ↓
+Text Encoder
+       ↓
+Fusion Models
+       ↓
+Contrastive Training
+       ↓
+Retrieval Evaluation
+       ↓
+Visualization
+```
 
-The project is inspired by research on:
+---
 
+# 📦 Requirements
+
+```text
+torch
+torchvision
+numpy
+Pillow
+matplotlib
+```
+
+---
+
+# 🔁 Reproducibility
+
+For reproducible experiments, record:
+
+- Random seed
+- Python version
+- PyTorch version
+- GPU
+- Dataset configuration
+- Model configuration
+- Learning rate
+- Batch size
+- Number of epochs
+
+---
+
+# 📚 References
+
+### Core Papers
+
+1. **Attention Is All You Need**
+   - Vaswani et al.
+   - Transformer architecture
+
+2. **Learning Transferable Visual Models From Natural Language Supervision**
+   - Radford et al.
+   - CLIP and contrastive vision-language learning
+
+3. **An Image is Worth 16x16 Words**
+   - Dosovitskiy et al.
+   - Vision Transformer
+
+4. Relevant research on:
+   - Vision-Language Models
+   - Multimodal Fusion
+   - Cross-Attention
+   - Contrastive Learning
+
+---
+
+# 👨‍💻 Author
+
+**Abhishek Singh**
+
+Research interests:
+
+```text
+Speech AI
+ASR
+Large Language Models
 Vision-Language Models
+Multimodal AI
+Representation Learning
+```
 
-Contrastive Learning
+---
 
-CLIP-style image-text representation learning
+# ⭐ Project Philosophy
 
-Transformer architectures
+> **Same data. Same objective. Different fusion mechanism.**
 
-Multi-Head Cross-Attention
+The purpose of this project is not simply to build a VLM, but to
+systematically understand how **multimodal information exchange**
+influences representation learning.
 
-📄 License
+---
 
-This project is intended for research and educational purposes.
+<p align="center">
+
+### 🔬 Vision × Language × Fusion
+
+**A controlled study of multimodal representation learning.**
+
+</p>
