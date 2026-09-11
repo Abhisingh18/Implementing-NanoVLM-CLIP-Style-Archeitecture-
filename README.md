@@ -1,630 +1,368 @@
-Complete VLM Experiment — One Flow
-                  SYNTHETIC DATASET
-                         │
-              ┌──────────┴──────────┐
-              │                     │
-              ▼                     ▼
-            IMAGE                  TEXT
-              │                     │
-              │              "a red square
-              │               is on the left"
-              │                     │
-              ▼                     ▼
-       VISION ENCODER          TOKENIZER
-              │                     │
-              ▼                     ▼
-       VISUAL FEATURES         TEXT TOKENS
-              │                     │
-              ▼                     ▼
-       IMAGE EMBEDDING         TEXT ENCODER
-              │                     │
-              │                     ▼
-              │                TEXT EMBEDDING
-              │                     │
-              └──────────┬──────────┘
-                         ▼
-                  CONTRASTIVE LOSS
-                         │
-                         ▼
-                    BACKPROP
-                         │
-                         ▼
-                  MODEL LEARNS
-                  IMAGE ↔ TEXT
+Vision-Language Fusion Ablation Study
 
-Ye tumhara first/baseline model hai.
+A controlled study comparing Early Fusion, Late Fusion, and Cross-Attention Fusion strategies for Vision-Language Models using synthetic image-text data and contrastive learning.
 
-STEP 1 — Synthetic Dataset
+🔬 Research Question
 
-Hum manually images generate kar rahe hain.
+How does the choice of multimodal fusion strategy affect image-text representation alignment and retrieval performance?
 
-Teen attributes hain:
+🎯 Objectives
 
-colours = [
-    'red', 'green', 'yellow', 'purple',
-    'orange', 'pink', 'brown', 'gray'
-]
+Build a controlled Vision-Language learning setup.
 
-shapes = [
-    'square', 'circle', 'triangle'
-]
+Compare different multimodal fusion strategies.
 
-positions = [
-    'left', 'centre', 'right',
-    'top', 'bottom',
-    'top-left', 'top-right'
-]
+Train the models using contrastive learning.
 
-Isse:
+Evaluate image-text retrieval performance.
 
-$$ 8 \times 3 \times 7 = 168 $$
+Analyze cross-modal interactions using attention visualization.
 
-image-text pairs milte hain.
+🧠 Methodology
+
+The system consists of:
+
+Vision Encoder
+
+Text Encoder
+
+Multimodal Fusion Module
+
+Contrastive Learning Objective
+
+Image ──→ Vision Encoder ──→ Visual Representation ──┐
+                                                     ├──→ Fusion ──→ Joint Representation
+Text  ──→ Text Encoder  ──→ Text Representation ─────┘
+
+🗂️ Synthetic Dataset
+
+The experiment uses procedurally generated images containing simple:
+
+Colors
+
+Shapes
+
+Spatial positions
+
+The corresponding text caption describes the image.
 
 Example:
 
-IMAGE:
+Image: red square on the left
+Caption: "a red square is on the left"
 
-┌────────────────┐
-│                │
-│ 🟥             │
-│                │
-└────────────────┘
+The current configuration contains:
 
-TEXT:
+8 colors
 
-"a red square is on the left"
+3 shapes
 
-Important: Image aur text same semantic information represent karte hain.
+7 positions
 
-STEP 2 — Image Generate
+168 unique image-text pairs
 
-draw_sample() function:
+🔀 Fusion Strategies
 
-colour + shape + position
-          ↓
-      PIL Image
-          ↓
-       32 × 32
+1. Early Fusion
 
-Example:
+Image and text representations are combined at an early stage.
 
-draw_sample(
-    'red',
-    'square',
-    'left'
-)
+Image → Vision Encoder ──┐
+                         ├→ Concatenation → Multimodal Network
+Text  → Text Encoder ────┘
 
-Output:
+2. Late Fusion
 
-32 × 32 RGB image
-STEP 3 — Text Generate
+The two modalities are encoded independently and combined at a later stage.
 
-Image ke attributes se caption banate hain:
+Image → Vision Encoder → Image Embedding ──┐
+                                           ├→ Fusion → Joint Embedding
+Text  → Text Encoder  → Text Embedding ────┘
 
-create_caption(
-    'red',
-    'square',
-    'left'
-)
+3. Cross-Attention Fusion
 
-Output:
+Text tokens attend dynamically to visual tokens.
 
-"a red square is on the left"
+Text Tokens  → Query (Q)
+Image Tokens → Key (K), Value (V)
 
-Ab hamare paas:
+             ↓
 
-Image  ↔  Caption
-STEP 4 — Dataset Class
+      Cross-Attention
 
-PyTorch Dataset image + text pair return karta hai:
+             ↓
 
-Dataset
-   │
-   ├── Image
-   │
-   └── Text
+   Fused Representation
 
-Example:
+The attention operation is:
 
-image, text, caption = dataset[0]
-STEP 5 — DataLoader
+$$
+Attention(Q,K,V)=softmax\left(\frac{QK^T}{\sqrt{d_k}}\right)V
+$$
 
-Dataset ko batches mein convert karte hain.
+🔗 Contrastive Learning
 
-Agar:
+The objective is to bring matching image-text pairs closer in the embedding space and push mismatched pairs apart.
 
-BATCH_SIZE = 32
+For a batch of size $N$:
 
-toh:
+Image₁ ↔ Caption₁  Positive
+Image₁ ↔ Caption₂  Negative
+Image₁ ↔ Caption₃  Negative
+...
 
-Batch
- │
- ├── 32 Images
- │
- └── 32 Texts
-STEP 6 — Vision Encoder 👁️
+The similarity matrix is:
 
-Image ko neural network mein dete hain.
-
-Tumhare current experiment mein CNN use ho raha hai.
-
-32×32×3 Image
-       ↓
-     Conv2D
-       ↓
-     ReLU
-       ↓
-    MaxPool
-       ↓
-     Conv2D
-       ↓
-     ReLU
-       ↓
-    MaxPool
-       ↓
-     Conv2D
-       ↓
-Global Average Pool
-       ↓
-     Linear
-       ↓
-64-D Image Embedding
-
-Output:
-
-$$ I \in R^{64} $$
-
-Matlab:
-
-Image → [0.12, 0.87, ..., 0.31]
-              64 values
-STEP 7 — Text Tokenizer 📝
-
-Caption:
-
-"a red square is on the left"
-
-ko tokens mein todte hain:
-
-[a] [red] [square] [is] [on] [the] [left]
-
-Phir token IDs:
-
-[2, 5, 12, 8, 4, 7, 19]
-
-Padding ke baad fixed length:
-
-[2,5,12,8,4,7,19,0,0,0]
-STEP 8 — Text Encoder
-
-Ab token IDs ko embeddings mein convert karte hain:
-
-Token IDs
-    ↓
-Embedding
-    ↓
-Transformer Encoder
-    ↓
-Mean Pooling
-    ↓
-Linear Projection
-    ↓
-64-D Text Embedding
-
-Output:
-
-$$ T \in R^{64} $$
-
-Ab:
-
-IMAGE → 64-D vector
-TEXT  → 64-D vector
-
-Important: Dono same embedding space mein hain.
-
-STEP 9 — Normalize
-
-Hum dono embeddings ko normalize karte hain:
-
-image_features = F.normalize(
-    image_features,
-    dim=-1
-)
-
-text_features = F.normalize(
-    text_features,
-    dim=-1
-)
-
-Iska purpose similarity calculation ko stable banana hai.
-
-STEP 10 — Similarity Matrix 🔥
-
-Ab image aur text embeddings ka dot product:
-
-logits = (
-    image_features @ text_features.T
-) / TEMPERATURE
-
-Agar batch size 4:
-
-             TEXT
-          T1   T2   T3   T4
-
-IMAGE I1  8.2  1.2  0.4  0.8
-      I2  0.7  7.9  0.9  0.2
-      I3  0.3  1.1  8.4  0.5
-      I4  0.6  0.4  0.8  8.0
-
-Correct pair:
-
-I1 ↔ T1
-I2 ↔ T2
-I3 ↔ T3
-I4 ↔ T4
-
-isliye diagonal high honi chahiye.
-
-STEP 11 — Temperature
-
-Tumhare code mein:
-
-TEMPERATURE = 0.07
-
-Similarity ko sharpen karta hai:
-
-$$ logits = \frac{I T^T}{\tau} $$
+$$
+S = \frac{I T^T}{\tau}
+$$
 
 where:
 
-$$ \tau=0.07 $$
-STEP 12 — Labels
+$I$ = normalized image embeddings
 
-Batch ke andar correct matching pair same index par hai:
+$T$ = normalized text embeddings
 
-labels = torch.arange(
-    batch_size,
-    device=logits.device
-)
+$\tau$ = temperature
 
-For batch 4:
+The final loss is:
 
-labels = [0, 1, 2, 3]
+$$
+L = \frac{L_{image\rightarrow text}+L_{text\rightarrow image}}{2}
+$$
 
-Meaning:
+🏗️ Models
 
-Image 0 → Text 0
-Image 1 → Text 1
-Image 2 → Text 2
-Image 3 → Text 3
-STEP 13 — Contrastive Loss
-Image → Text
-loss_i2t = F.cross_entropy(
-    logits,
-    labels
-)
+Baseline Contrastive VLM
 
-Model se pooch rahe hain:
+Independent vision and text encoders produce global embeddings, which are trained with symmetric contrastive loss.
 
-"Is image ka correct text kaunsa hai?"
+Cross-Attention VLM
 
-Text → Image
-loss_t2i = F.cross_entropy(
-    logits.T,
-    labels
-)
+The vision encoder produces visual tokens and the text encoder produces text tokens. Multi-head cross-attention allows text tokens to attend to relevant visual tokens before generating the final representation.
 
-Ab pooch rahe hain:
+⚙️ Experimental Setup
 
-"Is text ka correct image kaunsa hai?"
+Parameter
 
-Final Loss
-loss = (
-    loss_i2t + loss_t2i
-) / 2
+Value
 
-Yaani bidirectional alignment.
+Image Size
 
-STEP 14 — Backpropagation
+32 × 32
 
-Ab:
+Embedding Dimension
 
-loss.backward()
+64
 
-gradients calculate hote hain.
+Attention Heads
 
-Then:
+4
 
-optimizer.step()
+Temperature
 
-model ke weights update hote hain.
+0.07
 
-Complete:
+Optimizer
 
-Image + Text
-     ↓
-Encoders
-     ↓
-Embeddings
-     ↓
-Similarity
-     ↓
+AdamW
+
+Learning Rate
+
+3e-4
+
+Weight Decay
+
+1e-4
+
+Batch Size
+
+32
+
+Epochs
+
+20
+
+All fusion strategies should use comparable training conditions for a fair ablation study.
+
+📊 Evaluation
+
+The experiments use:
+
 Contrastive Loss
-     ↓
-Backward
-     ↓
-Weight Update
 
-Repeat:
+Recall@1
 
-Epoch 1
-Epoch 2
-Epoch 3
-...
-Epoch 20
-🔥 Ab Second Model — Cross Attention
+Recall@5
 
-Ab yahin se tumhara actual VLM fusion experiment interesting hota hai.
+Image-to-Text Retrieval
 
-Baseline mein:
+Text-to-Image Retrieval
 
-IMAGE → Image Embedding
-                 ↕
-             Similarity
-                 ↕
-TEXT  → Text Embedding
+Similarity Matrix
 
-Image aur text internally interact nahi kar rahe.
+Cross-Attention Visualization
 
-Cross-attention mein hum bolte hain:
+🧪 Ablation Study
 
-Text ko image ke visual tokens ke saath interact karne do.
+The main comparison is:
 
-STEP 15 — Image → Visual Tokens
+Model
 
-Instead of:
+Fusion Strategy
 
-Image → one 64-D vector
+Cross-Modal Interaction
 
-hum karte hain:
+Baseline
 
-Image
- ↓
-Vision Encoder
- ↓
-Feature Map
- ↓
-4 × 4
- ↓
-16 Visual Tokens
+Independent
 
-Output:
+Low
 
-$$ [B,16,64] $$
+Early Fusion
 
-Example:
+Early
 
-Image Tokens:
+Joint representation
 
-V1 V2 V3 V4
-V5 V6 V7 V8
-V9 V10 V11 V12
-V13 V14 V15 V16
+Late Fusion
 
-Ye image ke different spatial regions represent karte hain.
+Late
 
-STEP 16 — Text → Text Tokens
+High-level
 
-Is baar mean pooling immediately nahi karenge.
+Cross-Attention
 
-Instead:
+Dynamic
 
-"a red square is on the left"
+Token-level
 
-        ↓
+Results
 
-T1 T2 T3 T4 T5 T6 T7
+Results will be added after all models are trained under the same evaluation protocol.
 
-Output:
+Model
 
-$$ [B,7,64] $$
-STEP 17 — Cross Attention 🔥🔥
+Loss
 
-Ab:
+Image→Text R@1
 
-TEXT → Query (Q)
+Image→Text R@5
 
-IMAGE → Key (K)
-IMAGE → Value (V)
+Text→Image R@1
 
-Mathematically:
+Text→Image R@5
 
-$$ Q = TW_Q $$ $$ K = VW_K $$ $$ V'=VW_V $$
+Baseline
 
-Then:
+TBD
 
-$$ Attention = softmax \left( \frac{QK^T}{\sqrt{d_k}} \right)V' $$
-STEP 18 — Intuition
+TBD
 
-Text token:
+TBD
 
-"red"
+TBD
 
-Query banata hai.
-
-Phir image ke 16 visual tokens ke saath similarity calculate hoti hai:
-
-             Visual Tokens
-
-red →       V1 V2 V3 V4 ... V16
-            ↓  ↓  ↓
-attention   .  .  █  .
-
-Model seekhta hai ki:
-
-"red" ke liye image ka kaunsa region useful hai?
-
-Similarly:
-
-"square" → shape-related region
-
-"left" → left-side region
-STEP 19 — Cross-Attention Output
-
-Ab text representation mein visual information aa gayi:
-
-Text Tokens
-     +
-Visual Information
-     ↓
-Fused Text Tokens
+TBD
 
-Shape:
+Early Fusion
 
-[B, Text_Length, 64]
-STEP 20 — Transformer Block
+TBD
 
-Cross-attention ke baad:
+TBD
 
-Cross Attention
-      ↓
-Residual Connection
-      ↓
-LayerNorm
-      ↓
-FFN
-      ↓
-Residual
-      ↓
-LayerNorm
+TBD
 
-FFN:
+TBD
 
-Linear
-  ↓
-GELU
-  ↓
-Linear
-STEP 21 — Fused Representation
+TBD
 
-Ab text tokens ko mean pool karte hain:
+Late Fusion
 
-Fused Text Tokens
-       ↓
-Mean Pooling
-       ↓
-64-D Fused Embedding
+TBD
 
-Yaani:
-
-Image
-  ↓
-Visual Tokens
-  ↓
-      ┌──────────────┐
-      │Cross Attention│
-      └──────────────┘
-             ↑
-             │
-        Text Tokens
-             ↓
-      Fused Embedding
-STEP 22 — Contrastive Objective
-
-Ab fused representation ko text representation ke saath align kar sakte hain.
-
-Image
- ↓
-Vision Encoder
- ↓
-Visual Tokens
- ↓
-Cross Attention ← Text
- ↓
-Fused Embedding
-       ↕
-Contrastive Loss
-       ↕
-Text Embedding
-STEP 23 — Evaluation
-
-Training ke baad hum poochte hain:
-
-Image → Text Retrieval
-Image
- ↓
-Embedding
- ↓
-Compare with all captions
- ↓
-Rank captions
-
-Example:
-
-Image:
-red square left
-
-Model:
-
-1. a red square is on the left     0.94 ✓
-2. a red square is in the centre   0.72
-3. a green square is on the left  0.61
-4. a red circle is on the left    0.55
-STEP 24 — Recall@1
-
-Agar correct caption first position par hai:
-
-Correct → ✓
-
-then:
-
-$$ Recall@1 = \frac{correct\ top1}{total} $$
-
-For example:
-
-100 queries
-87 correct at #1
-
-Recall@1 = 87%
-STEP 25 — Recall@5
-
-Agar correct caption top 5 mein kahin bhi hai:
-
-1. wrong
-2. wrong
-3. correct ✓
-4. wrong
-5. wrong
-
-then successful.
-
-$$ Recall@5 = \frac{correct\ top5}{total} $$
-🎯 Final Experiment
-
-Tumhara final research pipeline:
-
-                    SAME DATASET
-                         │
-             ┌───────────┼───────────┐
-             │           │           │
-             ▼           ▼           ▼
-          BASELINE    EARLY/LATE   CROSS
-             │          FUSION     ATTENTION
-             │           │           │
-             ▼           ▼           ▼
-          Embedding   Fusion      Q-K-V
-             │           │           │
-             └───────────┼───────────┘
-                         ▼
-                  Contrastive Loss
-                         │
-                         ▼
-                    Training
-                         │
-                         ▼
-                  Retrieval Test
-                         │
-                ┌────────┴────────┐
-                ▼                 ▼
-             Recall@1          Recall@5
+TBD
+
+TBD
+
+TBD
+
+TBD
+
+Cross-Attention
+
+TBD
+
+TBD
+
+TBD
+
+TBD
+
+TBD
+
+🔎 Qualitative Analysis
+
+Cross-attention maps are visualized to investigate which visual tokens receive attention from different text tokens.
+
+This provides an interpretable view of text-to-image interaction.
+
+⚠️ Limitations
+
+The dataset is synthetic and very small.
+
+The task is intentionally controlled.
+
+Results should not be interpreted as representative of large-scale real-world VLMs.
+
+Training and evaluation must be separated for a meaningful generalization study.
+
+🚀 Future Work
+
+Implement complete Early Fusion and Late Fusion baselines.
+
+Create train/validation/test splits.
+
+Test compositional generalization.
+
+Use larger synthetic datasets.
+
+Introduce real image-text datasets.
+
+Compare different embedding dimensions.
+
+Study the effect of temperature and attention heads.
+
+Add pretrained vision and language encoders.
+
+Extend the experiment toward larger VLM architectures.
+
+📦 Installation
+
+pip install torch torchvision numpy pillow matplotlib
+
+▶️ Usage
+
+The main experiment can be run from:
+
+notebooks/vlm_fusion_ablation.ipynb
+
+The notebook contains dataset generation, model definitions, training, retrieval evaluation, and visualization.
+
+📚 References
+
+The project is inspired by research on:
+
+Vision-Language Models
+
+Contrastive Learning
+
+CLIP-style image-text representation learning
+
+Transformer architectures
+
+Multi-Head Cross-Attention
+
+📄 License
+
+This project is intended for research and educational purposes.
